@@ -1,16 +1,30 @@
 const fs = require("fs");
 const AWS = require('aws-sdk');
 
+// Validate environment variables
+//this will help in validation
+if (!process.env.ACCESSKEYID || !process.env.SECRETACCESSKEY || !process.env.BUCKETNAME) {
+  throw new Error("Missing required environment variables: ACCESSKEYID, SECRETACCESSKEY, BUCKETNAME");
+}
+
 // Initialize AWS S3 service object
 const s3 = new AWS.S3({
-    accessKeyId: process.env.ACCESSKEYID,
-    secretAccessKey: process.env.SECRETACCESSKEY,
-  });
+  accessKeyId: process.env.ACCESSKEYID,
+  secretAccessKey: process.env.SECRETACCESSKEY,
+});
 
 function getFileNamesFromFolder(folderPath) {
   try {
+    if (!fs.existsSync(folderPath)) {
+      throw new Error(`Folder not found: ${folderPath}`);
+    }
+
     // Read the contents of the folder
     const files = fs.readdirSync(folderPath);
+
+    if (files.length === 0) {
+      console.warn(`No files found in folder: ${folderPath}`);
+    }
 
     // Return the file names
     return files;
@@ -39,12 +53,12 @@ async function getFileNamesNotInBucket(bucketName, fileNamesArray) {
 
     return nonMatchingFileNames;
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error retrieving bucket contents:", error);
     throw error;
   }
 }
 
 module.exports = {
   getFileNamesFromFolder,
-  getFileNamesNotInBucket
+  getFileNamesNotInBucket,
 };
